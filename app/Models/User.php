@@ -2,43 +2,64 @@
 
 namespace App\Models;
 
-use Illuminate\Contracts\Auth\MustVerifyEmail;
+// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
 
+#[Fillable(['name', 'email', 'password', 'role'])]
+#[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    /** @use HasFactory<UserFactory> */
+    use HasFactory, Notifiable;
 
     /**
-     * The attributes that are mass assignable.
+     * Get the attributes that should be cast.
      *
-     * @var array<int, string>
+     * @return array<string, string>
      */
-    protected $fillable = [
-        'name',
-        'email',
-        'password',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+        ];
+    }
 
     /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
+     * Get the purchase orders created by this user.
      */
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
+    public function purchaseOrders(): HasMany
+    {
+        return $this->hasMany(PurchaseOrder::class, 'id_user', 'id');
+    }
 
     /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
+     * Get the invoices created by this user.
      */
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-    ];
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class, 'id_user', 'id');
+    }
+
+    /**
+     * Check if user is admin.
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    /**
+     * Check if user is owner.
+     */
+    public function isOwner(): bool
+    {
+        return $this->role === 'owner';
+    }
 }
